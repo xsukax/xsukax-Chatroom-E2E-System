@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>xsukax Chat System</title>
+    <title>xsukax Chatroom System</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Courier New', monospace; background: #1a1a1a; color: #e0e0e0; height: 100vh; overflow: hidden; touch-action: manipulation; }
@@ -14,6 +14,8 @@
         .modal button:hover { background: #5a5a5a; }
         .modal button.danger { background: #ff4757; }
         .modal button.danger:hover { background: #ff3742; }
+        .modal button.primary { background: #4ecdc4; color: #1a1a1a; }
+        .modal button.primary:hover { background: #45b7b8; }
         .modal .optional-label { font-size: 12px; color: #888; margin-top: -5px; margin-bottom: 10px; }
         .hidden { display: none; }
         .chat-container { display: flex; height: 100vh; flex-direction: column; }
@@ -28,6 +30,7 @@
         .tab { padding: 10px 15px; background: #3a3a3a; border-right: 1px solid #444; cursor: pointer; white-space: nowrap; min-width: 80px; text-align: center; position: relative; }
         .tab.active { background: #4a4a4a; }
         .tab.private { color: #4ecdc4; }
+        .tab.room { color: #feca57; }
         .tab.notification { background: #ff6b6b; }
         .tab .close-btn { margin-left: 8px; color: #ff4757; font-weight: bold; cursor: pointer; }
         .tab .close-btn:hover { color: #ff3742; }
@@ -37,6 +40,7 @@
         .message.system { border-left-color: #4ecdc4; color: #4ecdc4; }
         .message.error { border-left-color: #ff4757; color: #ff4757; }
         .message.private { border-left-color: #feca57; }
+        .message.room { border-left-color: #48b884; }
         .message .timestamp { color: #888; font-size: 11px; }
         .message .uid { color: #feca57; font-weight: bold; }
         .message .content { margin-top: 2px; }
@@ -46,7 +50,9 @@
         .input-container button { padding: 10px 15px; background: #4a4a4a; border: none; color: #e0e0e0; border-radius: 3px; cursor: pointer; touch-action: manipulation; }
         .input-container button:hover { background: #5a5a5a; }
         .users-panel { width: 200px; background: #2a2a2a; border-left: 1px solid #444; display: flex; flex-direction: column; }
-        .users-header { padding: 10px; border-bottom: 1px solid #444; font-weight: bold; font-size: 14px; display: flex; justify-content: space-between; align-items: center; }
+        .users-header { padding: 10px; border-bottom: 1px solid #444; font-weight: bold; font-size: 14px; display: flex; justify-content: space-between; align-items: center; flex-direction: column; }
+        .users-title { display: flex; justify-content: space-between; align-items: center; width: 100%; }
+        .room-indicator { font-size: 11px; color: #888; margin-top: 2px; }
         .toggle-users { background: none; border: none; color: #e0e0e0; cursor: pointer; display: none; }
         .users-list { flex: 1; overflow-y: auto; }
         .user-item { padding: 8px 10px; border-bottom: 1px solid #333; cursor: pointer; position: relative; display: flex; justify-content: space-between; align-items: center; }
@@ -62,14 +68,26 @@
         .user-info-modal .modal-content { text-align: left; min-width: 400px; max-width: 90vw; }
         .user-info-modal .info-item { margin: 5px 0; padding: 5px; background: #3a3a3a; border-radius: 3px; }
         .encryption-status { font-size: 10px; color: #4ecdc4; margin-top: 5px; }
-        .flood-warning { color: #ff4757; font-size: 12px; padding: 5px; background: #2a1a1a; border: 1px solid #ff4757; border-radius: 3px; margin: 5px 0; }
-        @media (max-width: 768px) { .users-panel { position: fixed; top: 0; right: -200px; width: 200px; height: 100%; z-index: 999; transition: right 0.3s; } .users-panel.show { right: 0; } .toggle-users { display: block; } .chat-container { padding-right: 0; } .input-container { flex-direction: column; } .input-container input { min-width: auto; } .modal-content { margin: 10px; } .tabs { flex-wrap: wrap; } .tab { min-width: 60px; font-size: 12px; padding: 8px 10px; } }
+        .rooms-modal .modal-content { min-width: 500px; max-width: 90vw; }
+        .rooms-list { max-height: 300px; overflow-y: auto; margin: 10px 0; }
+        .room-item { padding: 10px; background: #3a3a3a; border: 1px solid #555; border-radius: 3px; margin: 5px 0; display: flex; justify-content: space-between; align-items: center; }
+        .room-item:hover { background: #4a4a4a; }
+        .room-info { flex: 1; }
+        .room-name { font-weight: bold; color: #feca57; }
+        .room-creator { font-size: 12px; color: #888; }
+        .room-actions { display: flex; gap: 5px; }
+        .room-actions button { padding: 5px 10px; font-size: 12px; }
+        .create-room-section { margin-top: 15px; padding-top: 15px; border-top: 1px solid #555; }
+        .admin-only { opacity: 0.5; }
+        .room-input { display: flex; gap: 10px; margin-top: 10px; }
+        .room-input input { flex: 1; }
+        @media (max-width: 768px) { .users-panel { position: fixed; top: 0; right: -200px; width: 200px; height: 100%; z-index: 999; transition: right 0.3s; } .users-panel.show { right: 0; } .toggle-users { display: block; } .chat-container { padding-right: 0; } .input-container { flex-direction: column; } .input-container input { min-width: auto; } .modal-content { margin: 10px; } .tabs { flex-wrap: wrap; } .tab { min-width: 60px; font-size: 12px; padding: 8px 10px; } .rooms-modal .modal-content { min-width: 90vw; } }
     </style>
 </head>
 <body>
     <div id="connectionModal" class="modal">
         <div class="modal-content">
-            <h3>Connect to xsukax Chat System</h3>
+            <h3>Connect to xsukax Chatroom System</h3>
             <input type="text" id="serverUrl" placeholder="Enter server URL" value="wss://chat.xsukax.net">
             <input type="text" id="usernameInput" placeholder="Enter username (optional)">
             <div class="optional-label">Leave empty for auto-generated username (xsukax0001, xsukax0002, etc.)</div>
@@ -101,6 +119,24 @@
         </div>
     </div>
 
+    <div id="roomsModal" class="modal hidden rooms-modal">
+        <div class="modal-content">
+            <h3>Chat Rooms</h3>
+            <div class="rooms-list" id="roomsList"></div>
+            <div class="create-room-section" id="createRoomSection">
+                <div><strong>Create New Room (Admin Only)</strong></div>
+                <div class="room-input">
+                    <input type="text" id="newRoomName" placeholder="Enter room name" maxlength="20">
+                    <button onclick="createRoom()" id="createRoomBtn" disabled>Create</button>
+                </div>
+            </div>
+            <div style="margin-top: 15px;">
+                <button onclick="closeRoomsModal()">Close</button>
+                <button onclick="refreshRooms()" class="primary">Refresh</button>
+            </div>
+        </div>
+    </div>
+
     <div id="chatContainer" class="chat-container hidden">
         <div class="header">
             <div>xsukax Chat System - Private Messages Encrypted</div>
@@ -120,6 +156,7 @@
                     <div class="input-container">
                         <input type="text" id="messageInput" placeholder="Type your message..." onkeypress="handleKeyPress(event)">
                         <button onclick="sendMessage()">Send</button>
+                        <button onclick="showRoomsModal()">Rooms</button>
                         <button onclick="showAdminModal()">Admin</button>
                         <button onclick="sendHelp()">Help</button>
                         <button class="danger" onclick="disconnect()">Disconnect</button>
@@ -129,8 +166,11 @@
 
             <div class="users-panel" id="usersPanel">
                 <div class="users-header">
-                    Online Users
-                    <button class="toggle-users" onclick="toggleUsersPanel()">×</button>
+                    <div class="users-title">
+                        <span>Online Users</span>
+                        <button class="toggle-users" onclick="toggleUsersPanel()">×</button>
+                    </div>
+                    <div class="room-indicator" id="roomIndicator">Main Room</div>
                 </div>
                 <div class="users-list" id="usersList"></div>
             </div>
@@ -140,7 +180,7 @@
     <div id="contextMenu" class="context-menu hidden"></div>
 
     <script>
-        let ws = null; let currentUsername = null; let isAdmin = false; let currentUsers = []; let contextMenuTarget = null; let keyPair = null; let publicKeys = {}; let activeTabs = new Set(['main']); let activeTab = 'main'; let tabMessages = { main: [] }; let keysReady = false; let connectionConfig = { url: '', username: '' }; let isReconnecting = false; let reconnectAttempts = 0; let maxReconnectAttempts = 10; let heartbeatInterval = null; let connectionState = 'disconnected'; let isIntentionalDisconnect = false; let messageCount = 0; let lastMessageTime = 0;
+        let ws = null; let currentUsername = null; let isAdmin = false; let currentUsers = []; let contextMenuTarget = null; let keyPair = null; let publicKeys = {}; let activeTabs = new Set(['main']); let activeTab = 'main'; let tabMessages = { main: [] }; let keysReady = false; let connectionConfig = { url: '', username: '' }; let isReconnecting = false; let reconnectAttempts = 0; let maxReconnectAttempts = 10; let heartbeatInterval = null; let connectionState = 'disconnected'; let isIntentionalDisconnect = false; let messageCount = 0; let lastMessageTime = 0; let availableRooms = []; let userRooms = new Set(['main']); let roomUsers = {}; let currentRoomUsers = [];
         
         async function generateKeyPair() { try { console.log('Generating RSA key pair...'); keyPair = await window.crypto.subtle.generateKey({ name: 'RSA-OAEP', modulusLength: 2048, publicExponent: new Uint8Array([1, 0, 1]), hash: 'SHA-256' }, true, ['encrypt', 'decrypt']); const publicKeyJwk = await window.crypto.subtle.exportKey('jwk', keyPair.publicKey); const publicKeyString = JSON.stringify(publicKeyJwk); console.log('Key pair generated successfully'); keysReady = true; return publicKeyString; } catch (e) { console.error('Failed to generate key pair:', e); return null; } }
         
@@ -166,31 +206,41 @@
         
         function disconnect() { console.log('Intentional disconnect...'); isIntentionalDisconnect = true; isReconnecting = false; reconnectAttempts = 0; stopHeartbeat(); if (ws) { ws.close(); } resetClientState(); showConnectionModal(); }
         
-        function resetClientState() { keysReady = false; keyPair = null; publicKeys = {}; currentUsername = null; isAdmin = false; activeTabs = new Set(['main']); activeTab = 'main'; tabMessages = { main: [] }; connectionState = 'disconnected'; messageCount = 0; lastMessageTime = 0; updateConnectionStatus('Disconnected', 'disconnected'); }
+        function resetClientState() { keysReady = false; keyPair = null; publicKeys = {}; currentUsername = null; isAdmin = false; activeTabs = new Set(['main']); activeTab = 'main'; tabMessages = { main: [] }; connectionState = 'disconnected'; messageCount = 0; lastMessageTime = 0; availableRooms = []; userRooms = new Set(['main']); roomUsers = {}; currentRoomUsers = []; updateConnectionStatus('Disconnected', 'disconnected'); }
         
         function toggleUsersPanel() { document.getElementById('usersPanel').classList.toggle('show'); }
         
         function updateUsernameDisplay(newUsername) { currentUsername = newUsername; document.getElementById('userInfo').textContent = `Connected as: ${newUsername}${isAdmin ? ' [ADMIN]' : ''}`; }
         
-        function handleUsernameChange(oldUsername, newUsername) { if (publicKeys[oldUsername]) { publicKeys[newUsername] = publicKeys[oldUsername]; delete publicKeys[oldUsername]; } const oldTabId = `pm_${oldUsername}`; const newTabId = `pm_${newUsername}`; if (activeTabs.has(oldTabId)) { activeTabs.delete(oldTabId); activeTabs.add(newTabId); if (tabMessages[oldTabId]) { tabMessages[newTabId] = tabMessages[oldTabId]; delete tabMessages[oldTabId]; } const tab = document.querySelector(`[data-tab="${oldTabId}"]`); if (tab) { tab.setAttribute('data-tab', newTabId); tab.innerHTML = `${newUsername} <span class="close-btn" onclick="event.stopPropagation(); closeTab('${newTabId}')">×</span>`; tab.onclick = () => switchToTab(newTabId); } if (activeTab === oldTabId) { activeTab = newTabId; } } }
+        function updateRoomIndicator(roomName) { const indicator = document.getElementById('roomIndicator'); if (roomName === 'main') { indicator.textContent = 'Main Room'; } else if (roomName.startsWith('pm_')) { indicator.textContent = 'Private Messages'; } else { indicator.textContent = `#${roomName}`; } }
         
-        async function handleMessage(event) { try { const data = JSON.parse(event.data); console.log('Received message:', data.type); switch(data.type) { case 'welcome': updateUsernameDisplay(data.username); addSystemMessage(data.message + ' - Private Messages Encrypted - Flood Protection: 30 msg/min', 'main'); document.getElementById('connectionModal').classList.add('hidden'); document.getElementById('chatContainer').classList.remove('hidden'); document.getElementById('connectionStatus').textContent = 'Welcome! Encryption ready.'; break; case 'username_changed': updateUsernameDisplay(data.new_username); addSystemMessage(data.message, 'main'); break; case 'user_renamed': handleUsernameChange(data.old_username, data.new_username); addSystemMessage(data.message, 'main'); break; case 'key_registered': console.log('Public key registered on server'); if (!currentUsername) { document.getElementById('connectionStatus').textContent = 'Encryption keys ready!'; } break; case 'pong': console.log('Received pong from server'); break; case 'message': addMessage(data, 'main'); break; case 'private_message': await handlePrivateMessage(data); break; case 'user_joined': case 'user_left': case 'user_kicked': case 'user_banned': addSystemMessage(data.message, 'main'); break; case 'users_list': currentUsers = data.users; updatePublicKeys(data.users); updateUsersList(); break; case 'admin_success': isAdmin = true; addSystemMessage(data.message, 'main'); updateUsernameDisplay(currentUsername); updateUsersList(); closeAdminModal(); break; case 'user_info': showUserInfo(data.target, data.info); break; case 'error': case 'help': addSystemMessage(data.message, 'main', data.type); break; case 'kicked': case 'banned': addSystemMessage(data.message, 'main', 'error'); isIntentionalDisconnect = true; setTimeout(() => location.reload(), 2000); break; } } catch (e) { console.error('Error handling message:', e); } }
+        function getRoomUsersForCurrentTab() { if (activeTab === 'main') { return roomUsers['main'] || []; } else if (activeTab.startsWith('pm_')) { return []; } else { return roomUsers[activeTab] || []; } }
         
-        function updatePublicKeys(users) { publicKeys = {}; users.forEach(user => { if (user.public_key) { publicKeys[user.username] = user.public_key; } }); console.log('Updated public keys for users:', Object.keys(publicKeys)); }
+        function requestRoomUsers(roomName) { if (ws && ws.readyState === WebSocket.OPEN) { ws.send(JSON.stringify({ message_type: 'get_room_users', room_name: roomName })); } }
+        
+        function handleUsernameChange(oldUsername, newUsername) { if (publicKeys[oldUsername]) { publicKeys[newUsername] = publicKeys[oldUsername]; delete publicKeys[oldUsername]; } Object.keys(roomUsers).forEach(roomName => { const users = roomUsers[roomName]; const userIndex = users.findIndex(user => user.username === oldUsername); if (userIndex !== -1) { users[userIndex].username = newUsername; } }); const oldTabId = `pm_${oldUsername}`; const newTabId = `pm_${newUsername}`; if (activeTabs.has(oldTabId)) { activeTabs.delete(oldTabId); activeTabs.add(newTabId); if (tabMessages[oldTabId]) { tabMessages[newTabId] = tabMessages[oldTabId]; delete tabMessages[oldTabId]; } const tab = document.querySelector(`[data-tab="${oldTabId}"]`); if (tab) { tab.setAttribute('data-tab', newTabId); tab.innerHTML = `${newUsername} <span class="close-btn" onclick="event.stopPropagation(); closeTab('${newTabId}')">×</span>`; tab.onclick = () => switchToTab(newTabId); } if (activeTab === oldTabId) { activeTab = newTabId; } } updateCurrentRoomUsersList(); }
+        
+        async function handleMessage(event) { try { const data = JSON.parse(event.data); console.log('Received message:', data.type); switch(data.type) { case 'welcome': updateUsernameDisplay(data.username); if (data.rooms) { userRooms = new Set(data.rooms); data.rooms.forEach(room => { if (room !== 'main' && !activeTabs.has(room)) { createRoomTab(room); } }); } addSystemMessage(data.message + ' - Private Messages Encrypted - Rooms Available - Flood Protection: 30 msg/min', 'main'); document.getElementById('connectionModal').classList.add('hidden'); document.getElementById('chatContainer').classList.remove('hidden'); document.getElementById('connectionStatus').textContent = 'Welcome! Encryption ready.'; requestRoomUsers('main'); break; case 'username_changed': updateUsernameDisplay(data.new_username); addSystemMessage(data.message, activeTab); break; case 'user_renamed': handleUsernameChange(data.old_username, data.new_username); const targetRoom = data.room || 'main'; addSystemMessage(data.message, targetRoom); break; case 'key_registered': console.log('Public key registered on server'); if (!currentUsername) { document.getElementById('connectionStatus').textContent = 'Encryption keys ready!'; } break; case 'pong': console.log('Received pong from server'); break; case 'message': const messageRoom = data.room || 'main'; addMessage(data, messageRoom); break; case 'private_message': await handlePrivateMessage(data); break; case 'user_joined': case 'user_left': case 'user_kicked': case 'user_banned': case 'user_joined_room': case 'user_left_room': const systemRoom = data.room || 'main'; addSystemMessage(data.message, systemRoom); if (systemRoom !== activeTab) { highlightTab(systemRoom); } break; case 'users_list': currentUsers = data.users; updatePublicKeys(data.users); break; case 'room_users_list': const roomName = data.room_name; roomUsers[roomName] = data.users; updatePublicKeys(data.users); if (activeTab === roomName || (activeTab === 'main' && roomName === 'main')) { updateCurrentRoomUsersList(); } break; case 'rooms_list': availableRooms = data.rooms; updateRoomsList(); break; case 'room_joined': userRooms.add(data.room_name); createRoomTab(data.room_name); addSystemMessage(data.message, data.room_name); switchToTab(data.room_name); break; case 'room_left': userRooms.delete(data.room_name); closeTab(data.room_name); addSystemMessage(`Left room: ${data.room_name}`, 'main'); break; case 'room_created': addSystemMessage(data.message, 'main'); refreshRooms(); break; case 'room_deleted': if (data.room_name && activeTabs.has(data.room_name)) { addSystemMessage(data.message, data.room_name); closeTab(data.room_name); } addSystemMessage(`Room deleted: ${data.room_name}`, 'main'); refreshRooms(); break; case 'admin_success': isAdmin = true; addSystemMessage(data.message, 'main'); updateUsernameDisplay(currentUsername); updateCurrentRoomUsersList(); updateCreateRoomUI(); closeAdminModal(); break; case 'user_info': showUserInfo(data.target, data.info); break; case 'error': case 'help': addSystemMessage(data.message, activeTab, data.type); break; case 'kicked': case 'banned': addSystemMessage(data.message, 'main', 'error'); isIntentionalDisconnect = true; setTimeout(() => location.reload(), 2000); break; } } catch (e) { console.error('Error handling message:', e); } }
+        
+        function updatePublicKeys(users) { users.forEach(user => { if (user.public_key) { publicKeys[user.username] = user.public_key; } }); console.log('Updated public keys for users:', Object.keys(publicKeys)); }
         
         async function handlePrivateMessage(data) { console.log('Received private message from:', data.from_username); const tabId = `pm_${data.from_username}`; if (!activeTabs.has(tabId)) { createPrivateTab(data.from_username); } const decrypted = await decryptMessage(data.encrypted_content); addMessage({ username: data.from_username, content: decrypted, timestamp: data.timestamp, is_admin: data.is_admin, type: 'message' }, tabId, true); if (activeTab !== tabId) { highlightTab(tabId); } }
         
         function createPrivateTab(username) { const tabId = `pm_${username}`; activeTabs.add(tabId); tabMessages[tabId] = []; const tabsContainer = document.getElementById('chatTabs'); const tab = document.createElement('div'); tab.className = 'tab private'; tab.setAttribute('data-tab', tabId); tab.innerHTML = `${username} <span class="close-btn" onclick="event.stopPropagation(); closeTab('${tabId}')">×</span>`; tab.onclick = () => switchToTab(tabId); tabsContainer.appendChild(tab); }
         
-        function switchToTab(tabId) { if (!activeTabs.has(tabId)) return; activeTab = tabId; document.querySelectorAll('.tab').forEach(tab => { tab.classList.remove('active'); tab.classList.remove('notification'); }); const targetTab = document.querySelector(`[data-tab="${tabId}"]`); if (targetTab) { targetTab.classList.add('active'); } displayMessages(tabId); }
+        function createRoomTab(roomName) { const tabId = roomName; if (activeTabs.has(tabId)) return; activeTabs.add(tabId); tabMessages[tabId] = []; const tabsContainer = document.getElementById('chatTabs'); const tab = document.createElement('div'); tab.className = 'tab room'; tab.setAttribute('data-tab', tabId); tab.innerHTML = `#${roomName} <span class="close-btn" onclick="event.stopPropagation(); leaveRoom('${tabId}')">×</span>`; tab.onclick = () => switchToTab(tabId); tabsContainer.appendChild(tab); }
+        
+        function switchToTab(tabId) { if (!activeTabs.has(tabId)) return; activeTab = tabId; document.querySelectorAll('.tab').forEach(tab => { tab.classList.remove('active'); tab.classList.remove('notification'); }); const targetTab = document.querySelector(`[data-tab="${tabId}"]`); if (targetTab) { targetTab.classList.add('active'); } displayMessages(tabId); updateRoomIndicator(tabId); if (tabId.startsWith('pm_')) { currentRoomUsers = []; updateCurrentRoomUsersList(); } else { const roomName = tabId === 'main' ? 'main' : tabId; if (roomUsers[roomName]) { updateCurrentRoomUsersList(); } else { requestRoomUsers(roomName); } } }
         
         function highlightTab(tabId) { const tab = document.querySelector(`[data-tab="${tabId}"]`); if (tab && activeTab !== tabId) { tab.classList.add('notification'); } }
         
-        function closeTab(tabId) { if (tabId === 'main') return; activeTabs.delete(tabId); delete tabMessages[tabId]; const tab = document.querySelector(`[data-tab="${tabId}"]`); if (tab) tab.remove(); if (activeTab === tabId) { switchToTab('main'); } }
+        function closeTab(tabId) { if (tabId === 'main') return; activeTabs.delete(tabId); delete tabMessages[tabId]; if (roomUsers[tabId]) { delete roomUsers[tabId]; } const tab = document.querySelector(`[data-tab="${tabId}"]`); if (tab) tab.remove(); if (activeTab === tabId) { switchToTab('main'); } }
+        
+        function leaveRoom(roomName) { if (roomName === 'main') return; if (ws && ws.readyState === WebSocket.OPEN) { ws.send(JSON.stringify({ message_type: 'leave_room', room_name: roomName })); } }
         
         function displayMessages(tabId) { const messagesContainer = document.getElementById('messages'); messagesContainer.innerHTML = ''; if (tabMessages[tabId]) { tabMessages[tabId].forEach(msg => { messagesContainer.appendChild(msg.cloneNode(true)); }); messagesContainer.scrollTop = messagesContainer.scrollHeight; } }
         
-        function updateUsersList() { const usersList = document.getElementById('usersList'); usersList.innerHTML = ''; currentUsers.forEach(user => { const userItem = document.createElement('div'); userItem.className = `user-item ${user.is_admin ? 'admin' : ''} ${user.username === currentUsername ? 'current' : ''}`; const userInfo = document.createElement('span'); userInfo.textContent = `${user.username}${user.is_admin ? ' [A]' : ''}`; userItem.appendChild(userInfo); if (user.username !== currentUsername) { const container = document.createElement('div'); const pmBtn = document.createElement('button'); pmBtn.className = 'pm-btn'; pmBtn.textContent = 'PM'; pmBtn.onclick = (e) => { e.stopPropagation(); startPrivateChat(user.username); }; container.appendChild(pmBtn); if (publicKeys[user.username]) { const encryptIcon = document.createElement('span'); encryptIcon.className = 'encryption-indicator'; encryptIcon.textContent = '🔒'; encryptIcon.title = 'Encryption available'; container.appendChild(encryptIcon); } userItem.appendChild(container); } userItem.setAttribute('data-username', user.username); if (isAdmin && user.username !== currentUsername) { userItem.oncontextmenu = (e) => showContextMenu(e, user.username); } usersList.appendChild(userItem); }); }
+        function updateCurrentRoomUsersList() { const usersList = document.getElementById('usersList'); usersList.innerHTML = ''; if (activeTab.startsWith('pm_')) { const recipientUsername = activeTab.replace('pm_', ''); const userItem = document.createElement('div'); userItem.className = 'user-item'; userItem.innerHTML = `<span>${recipientUsername}</span>`; if (publicKeys[recipientUsername]) { const encryptIcon = document.createElement('span'); encryptIcon.className = 'encryption-indicator'; encryptIcon.textContent = '🔒'; encryptIcon.title = 'Encryption available'; userItem.appendChild(encryptIcon); } usersList.appendChild(userItem); return; } const roomName = activeTab === 'main' ? 'main' : activeTab; const users = roomUsers[roomName] || []; users.forEach(user => { const userItem = document.createElement('div'); userItem.className = `user-item ${user.is_admin ? 'admin' : ''} ${user.username === currentUsername ? 'current' : ''}`; const userInfo = document.createElement('span'); userInfo.textContent = `${user.username}${user.is_admin ? ' [A]' : ''}`; userItem.appendChild(userInfo); if (user.username !== currentUsername) { const container = document.createElement('div'); const pmBtn = document.createElement('button'); pmBtn.className = 'pm-btn'; pmBtn.textContent = 'PM'; pmBtn.onclick = (e) => { e.stopPropagation(); startPrivateChat(user.username); }; container.appendChild(pmBtn); if (publicKeys[user.username]) { const encryptIcon = document.createElement('span'); encryptIcon.className = 'encryption-indicator'; encryptIcon.textContent = '🔒'; encryptIcon.title = 'Encryption available'; container.appendChild(encryptIcon); } userItem.appendChild(container); } userItem.setAttribute('data-username', user.username); if (isAdmin && user.username !== currentUsername) { userItem.oncontextmenu = (e) => showContextMenu(e, user.username); } usersList.appendChild(userItem); }); }
         
         function startPrivateChat(username) { const tabId = `pm_${username}`; if (!activeTabs.has(tabId)) { createPrivateTab(username); } switchToTab(tabId); document.getElementById('messageInput').focus(); }
         
@@ -200,11 +250,27 @@
         
         function getUserInfo(username) { hideContextMenu(); if (ws && ws.readyState === WebSocket.OPEN) { ws.send(JSON.stringify({ content: `/userinfo ${username}` })); } }
         
-        function showUserInfo(username, info) { const content = document.getElementById('userInfoContent'); content.innerHTML = `<div class="info-item"><strong>Username:</strong> ${info.username}</div><div class="info-item"><strong>IP Address:</strong> ${info.ip}</div><div class="info-item"><strong>Admin:</strong> ${info.is_admin ? 'Yes' : 'No'}</div><div class="info-item"><strong>Joined:</strong> ${new Date(info.joined_at).toLocaleString()}</div><div class="info-item"><strong>Encryption:</strong> ${publicKeys[info.username] ? 'Public key available' : 'No public key'}</div>`; document.getElementById('userInfoModal').classList.remove('hidden'); }
+        function showUserInfo(username, info) { const content = document.getElementById('userInfoContent'); const roomsList = info.rooms ? info.rooms.join(', ') : 'None'; content.innerHTML = `<div class="info-item"><strong>Username:</strong> ${info.username}</div><div class="info-item"><strong>IP Address:</strong> ${info.ip}</div><div class="info-item"><strong>Admin:</strong> ${info.is_admin ? 'Yes' : 'No'}</div><div class="info-item"><strong>Joined:</strong> ${new Date(info.joined_at).toLocaleString()}</div><div class="info-item"><strong>Rooms:</strong> ${roomsList}</div><div class="info-item"><strong>Encryption:</strong> ${publicKeys[info.username] ? 'Public key available' : 'No public key'}</div>`; document.getElementById('userInfoModal').classList.remove('hidden'); }
         
         function closeUserInfoModal() { document.getElementById('userInfoModal').classList.add('hidden'); }
         
-        function addMessage(data, tabId, isPrivate = false) { if (!tabMessages[tabId]) tabMessages[tabId] = []; const msg = document.createElement('div'); msg.className = `message ${data.is_admin ? 'admin' : ''} ${isPrivate ? 'private' : ''}`; const time = new Date(data.timestamp).toLocaleTimeString(); msg.innerHTML = `<div class="timestamp">${time}</div><div class="uid">${data.username}${data.is_admin ? ' [ADMIN]' : ''}${isPrivate ? ' [PM]' : ''}:</div><div class="content">${escapeHtml(data.content)}</div>${isPrivate ? '<div class="encryption-status">🔒 End-to-end encrypted</div>' : ''}`; tabMessages[tabId].push(msg); if (activeTab === tabId) { document.getElementById('messages').appendChild(msg.cloneNode(true)); document.getElementById('messages').scrollTop = document.getElementById('messages').scrollHeight; } }
+        function showRoomsModal() { document.getElementById('roomsModal').classList.remove('hidden'); updateCreateRoomUI(); refreshRooms(); }
+        
+        function closeRoomsModal() { document.getElementById('roomsModal').classList.add('hidden'); }
+        
+        function updateCreateRoomUI() { const createBtn = document.getElementById('createRoomBtn'); const newRoomInput = document.getElementById('newRoomName'); const createSection = document.getElementById('createRoomSection'); if (isAdmin) { createBtn.disabled = false; newRoomInput.disabled = false; createSection.classList.remove('admin-only'); } else { createBtn.disabled = true; newRoomInput.disabled = true; createSection.classList.add('admin-only'); } }
+        
+        function refreshRooms() { if (ws && ws.readyState === WebSocket.OPEN) { ws.send(JSON.stringify({ message_type: 'get_rooms' })); } }
+        
+        function updateRoomsList() { const roomsList = document.getElementById('roomsList'); roomsList.innerHTML = ''; if (availableRooms.length === 0) { roomsList.innerHTML = '<div style="text-align: center; color: #888; padding: 20px;">No rooms available</div>'; return; } availableRooms.forEach(room => { const roomItem = document.createElement('div'); roomItem.className = 'room-item'; const isUserInRoom = userRooms.has(room.name); roomItem.innerHTML = `<div class="room-info"><div class="room-name">#${room.name}</div><div class="room-creator">Created by: ${room.created_by}</div></div><div class="room-actions">${isUserInRoom ? '<span style="color: #4ecdc4; font-size: 12px;">Joined</span>' : `<button onclick="joinRoom('${room.name}')" class="primary">Join</button>`}${isAdmin && room.name !== 'main' ? `<button onclick="deleteRoom('${room.name}')" class="danger">Delete</button>` : ''}</div>`; roomsList.appendChild(roomItem); }); }
+        
+        function joinRoom(roomName) { if (ws && ws.readyState === WebSocket.OPEN) { ws.send(JSON.stringify({ message_type: 'join_room', room_name: roomName })); } }
+        
+        function createRoom() { const roomName = document.getElementById('newRoomName').value.trim(); if (!roomName) { addSystemMessage('Please enter a room name', 'main', 'error'); return; } if (ws && ws.readyState === WebSocket.OPEN) { ws.send(JSON.stringify({ content: `/createroom ${roomName}` })); document.getElementById('newRoomName').value = ''; } }
+        
+        function deleteRoom(roomName) { if (confirm(`Are you sure you want to delete room #${roomName}?`)) { if (ws && ws.readyState === WebSocket.OPEN) { ws.send(JSON.stringify({ content: `/deleteroom ${roomName}` })); } } }
+        
+        function addMessage(data, tabId, isPrivate = false) { if (!tabMessages[tabId]) tabMessages[tabId] = []; const msg = document.createElement('div'); const isRoom = !isPrivate && tabId !== 'main' && !tabId.startsWith('pm_'); msg.className = `message ${data.is_admin ? 'admin' : ''} ${isPrivate ? 'private' : ''} ${isRoom ? 'room' : ''}`; const time = new Date(data.timestamp).toLocaleTimeString(); const roomIndicator = isRoom ? ` [#${tabId}]` : isPrivate ? ' [PM]' : ''; msg.innerHTML = `<div class="timestamp">${time}</div><div class="uid">${data.username}${data.is_admin ? ' [ADMIN]' : ''}${roomIndicator}:</div><div class="content">${escapeHtml(data.content)}</div>${isPrivate ? '<div class="encryption-status">🔒 End-to-end encrypted</div>' : ''}`; tabMessages[tabId].push(msg); if (activeTab === tabId) { document.getElementById('messages').appendChild(msg.cloneNode(true)); document.getElementById('messages').scrollTop = document.getElementById('messages').scrollHeight; } }
         
         function addSystemMessage(message, tabId, type = 'system') { if (!tabMessages[tabId]) tabMessages[tabId] = []; const msg = document.createElement('div'); msg.className = `message ${type}`; const time = new Date().toLocaleTimeString(); msg.innerHTML = `<div class="timestamp">${time}</div><div class="content">${escapeHtml(message)}</div>`; tabMessages[tabId].push(msg); if (activeTab === tabId) { document.getElementById('messages').appendChild(msg.cloneNode(true)); document.getElementById('messages').scrollTop = document.getElementById('messages').scrollHeight; } }
         
@@ -212,7 +278,7 @@
         
         function checkLocalFloodProtection() { if (isAdmin) return false; const now = Date.now(); if (now - lastMessageTime < 2000) { messageCount++; if (messageCount > 5) { return true; } } else { messageCount = 1; } lastMessageTime = now; return false; }
         
-        async function sendMessage() { const input = document.getElementById('messageInput'); const content = input.value.trim(); if (!content || !ws || ws.readyState !== WebSocket.OPEN) return; if (checkLocalFloodProtection()) { addSystemMessage('Please slow down - you are sending messages too quickly!', activeTab, 'error'); return; } if (activeTab === 'main') { ws.send(JSON.stringify({ content })); } else if (activeTab.startsWith('pm_')) { const recipientUsername = activeTab.replace('pm_', ''); const recipientKey = publicKeys[recipientUsername]; if (!recipientKey) { addSystemMessage('Cannot send message: recipient public key not available', activeTab, 'error'); input.value = ''; return; } console.log('Sending private message to:', recipientUsername); const encrypted = await encryptMessage(content, recipientKey); if (encrypted) { ws.send(JSON.stringify({ message_type: 'private', recipient_username: recipientUsername, encrypted_content: encrypted })); addMessage({ username: currentUsername, content: content, timestamp: new Date().toISOString(), is_admin: isAdmin }, activeTab, true); console.log('Private message sent successfully'); } else { addSystemMessage('Encryption failed', activeTab, 'error'); } } input.value = ''; }
+        async function sendMessage() { const input = document.getElementById('messageInput'); const content = input.value.trim(); if (!content || !ws || ws.readyState !== WebSocket.OPEN) return; if (content.startsWith('/join ')) { const roomName = content.substring(6).trim(); if (roomName.startsWith('#')) { const cleanRoomName = roomName.substring(1); if (ws && ws.readyState === WebSocket.OPEN) { ws.send(JSON.stringify({ content: `/join ${cleanRoomName}` })); } } else { addSystemMessage('Usage: /join #room-name', activeTab, 'error'); } input.value = ''; return; } if (content === '/left') { if (activeTab !== 'main' && !activeTab.startsWith('pm_')) { leaveRoom(activeTab); } else { addSystemMessage('Cannot leave main room or private messages', activeTab, 'error'); } input.value = ''; return; } if (checkLocalFloodProtection()) { addSystemMessage('Please slow down - you are sending messages too quickly!', activeTab, 'error'); return; } if (activeTab === 'main' || (!activeTab.startsWith('pm_') && activeTabs.has(activeTab))) { const messageData = { content }; if (activeTab !== 'main') { messageData.room = activeTab; } ws.send(JSON.stringify(messageData)); } else if (activeTab.startsWith('pm_')) { const recipientUsername = activeTab.replace('pm_', ''); const recipientKey = publicKeys[recipientUsername]; if (!recipientKey) { addSystemMessage('Cannot send message: recipient public key not available', activeTab, 'error'); input.value = ''; return; } console.log('Sending private message to:', recipientUsername); const encrypted = await encryptMessage(content, recipientKey); if (encrypted) { ws.send(JSON.stringify({ message_type: 'private', recipient_username: recipientUsername, encrypted_content: encrypted })); addMessage({ username: currentUsername, content: content, timestamp: new Date().toISOString(), is_admin: isAdmin }, activeTab, true); console.log('Private message sent successfully'); } else { addSystemMessage('Encryption failed', activeTab, 'error'); } } input.value = ''; }
         
         function handleKeyPress(event) { if (event.key === 'Enter') sendMessage(); }
         
@@ -231,6 +297,7 @@
         window.addEventListener('beforeunload', () => { isIntentionalDisconnect = true; });
         document.getElementById('adminPassword').addEventListener('keypress', (e) => { if (e.key === 'Enter') authenticateAdmin(); });
         document.getElementById('usernameInput').addEventListener('keypress', (e) => { if (e.key === 'Enter') connectToServer(); });
+        document.getElementById('newRoomName').addEventListener('keypress', (e) => { if (e.key === 'Enter' && isAdmin) createRoom(); });
         document.addEventListener('click', (e) => { if (!e.target.closest('.context-menu')) hideContextMenu(); if (!e.target.closest('.users-panel') && window.innerWidth <= 768) { document.getElementById('usersPanel').classList.remove('show'); } });
         document.addEventListener('contextmenu', (e) => { if (!e.target.closest('.user-item')) hideContextMenu(); });
         window.addEventListener('resize', () => { if (window.innerWidth > 768) { document.getElementById('usersPanel').classList.remove('show'); } });
