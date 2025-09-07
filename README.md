@@ -2,6 +2,8 @@
 
 A secure, real-time chat application featuring end-to-end encryption for private messages, robust moderation tools, and zero-persistence architecture designed for privacy-conscious communication.
 
+![](https://raw.githubusercontent.com/xsukax/xsukax-Chatroom-E2E-System/refs/heads/main/ScreenShot.png)
+
 ## Project Overview
 
 The xsukax Chat System is a WebSocket-based real-time messaging platform that prioritizes user privacy and security. Built with Python and vanilla JavaScript, it provides both public chat rooms and encrypted private messaging capabilities without storing any conversation history. The system features automatic username generation, comprehensive admin controls, and built-in flood protection mechanisms.
