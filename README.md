@@ -1,257 +1,300 @@
 # xsukax Chatroom E2E System
 
-A secure, real-time chat application featuring end-to-end encryption for private messages, robust moderation tools, and zero-persistence architecture designed for privacy-conscious communication.
+A secure, real-time WebSocket-based chat system featuring end-to-end encryption for private messages, multi-room support, and comprehensive administrative controls. Built with privacy and security as core principles.
 
 ![](https://raw.githubusercontent.com/xsukax/xsukax-Chatroom-E2E-System/refs/heads/main/ScreenShot.png)
 
 ## Project Overview
 
-The xsukax Chat System is a WebSocket-based real-time messaging platform that prioritizes user privacy and security. Built with Python and vanilla JavaScript, it provides both public chat rooms and encrypted private messaging capabilities without storing any conversation history. The system features automatic username generation, comprehensive admin controls, and built-in flood protection mechanisms.
+The xsukax Chatroom E2E System is a modern web-based chat application that prioritizes user privacy and security. It implements client-side RSA encryption for private messages, ensuring that sensitive communications remain confidential even from server administrators. The system supports multiple chat rooms, real-time messaging, and robust administrative features while maintaining a clean, responsive interface that works across desktop and mobile devices.
 
-**Core Architecture:**
-- **Server**: Python-based WebSocket server using the `websockets` library
-- **Client**: Single-page HTML application with vanilla JavaScript
-- **Encryption**: Client-side RSA-OAEP key generation and end-to-end encryption
-- **Storage**: Zero-persistence design with no message logging or history retention
+The architecture consists of a Python WebSocket server with SQLite database storage and a browser-based client featuring modern cryptographic capabilities. The system is designed for both public chat rooms and secure private communications, making it suitable for various use cases from casual community chat to secure business communications.
 
 ## Security and Privacy Benefits
 
 ### End-to-End Encryption
-- **RSA-OAEP 2048-bit encryption** for all private messages
-- **Client-side key generation** ensures private keys never leave the user's device
-- **Perfect Forward Secrecy** through session-based key pairs
-- **Zero server-side decryption capability** for private communications
+- **RSA-OAEP Encryption**: Private messages are encrypted client-side using 2048-bit RSA keys with OAEP padding
+- **Key Exchange**: Public keys are exchanged through the server but private keys never leave the client
+- **Forward Secrecy**: Each client generates fresh keypairs for enhanced security
+- **Encryption Indicators**: Visual indicators show when encryption is available and active
 
-### Privacy Protection
-- **No message persistence** - conversations are never stored on the server
-- **No conversation logging** - complete ephemeral messaging
-- **Anonymous connectivity** - no email or personal information required
-- **Auto-generated usernames** prevent identity correlation
-- **Memory-only state** - all data exists only in RAM during sessions
+### Privacy by Design
+- **No Message Storage**: Messages are not permanently stored on the server
+- **Ephemeral Communications**: Chat history exists only in client memory during the session
+- **IP Protection**: Only administrators can view IP addresses for moderation purposes
+- **Anonymous Usernames**: Auto-generated usernames (xsukax0001, etc.) provide privacy by default
 
-### Security Measures
-- **Automatic admin password rotation** every hour
-- **IP-based banning system** with persistent ban lists
-- **Flood protection** limiting users to 30 messages per minute
-- **Connection heartbeat monitoring** prevents zombie connections
-- **Input validation and sanitization** prevents injection attacks
-- **WebSocket security** with proper origin checking and rate limiting
+### Administrative Security
+- **Rotating Admin Passwords**: Administrative passwords automatically rotate every hour
+- **Secure Authentication**: Admin credentials are stored locally and regenerated frequently
+- **Granular Permissions**: Clear separation between user and administrator capabilities
+- **Audit Trail**: Room creation and management actions are logged with timestamps
 
-### Trust and Transparency
-- **Open source architecture** allows independent security audits
-- **No external dependencies** for the client application
-- **Minimal attack surface** with lightweight, focused codebase
-- **Clear separation** between public and private communication channels
+### Network Security
+- **WebSocket Security**: Supports both WS and WSS (encrypted) connections
+- **Flood Protection**: Rate limiting (30 messages/minute) prevents spam and abuse
+- **IP-based Banning**: Persistent IP blocking for problematic users
+- **Connection Stability**: Heartbeat mechanism ensures reliable connections
 
 ## Features and Advantages
 
 ### Core Messaging Features
-- **Real-time communication** with sub-second message delivery
-- **Dual-channel architecture** supporting both public rooms and private messaging
-- **Tabbed interface** for managing multiple private conversations
-- **Auto-reconnection** with exponential backoff for connection stability
-- **Cross-platform compatibility** through web browser support
+- **Real-time Communication**: Instant message delivery using WebSocket technology
+- **Multi-room Support**: Create and join multiple chat rooms with isolated conversations
+- **Private Messaging**: Secure one-on-one conversations with end-to-end encryption
+- **User Presence**: Real-time user lists showing who's online in each room
+- **Cross-platform**: Works on desktop browsers, tablets, and mobile devices
 
-### Administrative Capabilities
-- **Dynamic admin authentication** with hourly password rotation
-- **User management tools** including kick and ban functionality
-- **Real-time user monitoring** with connection status and IP tracking
-- **Granular permissions** with admin-exempt flood protection
-- **Comprehensive user information** display for moderation decisions
+### User Experience
+- **Intuitive Interface**: Clean, modern design with tab-based room navigation
+- **Responsive Design**: Optimized for both desktop and mobile usage
+- **Visual Feedback**: Clear indicators for encryption status, admin privileges, and notifications
+- **Context Menus**: Right-click actions for administrative functions
+- **Accessibility**: Keyboard navigation and semantic HTML structure
 
-### User Experience Enhancements
-- **Responsive design** optimized for desktop and mobile devices
-- **Intuitive interface** with clear visual indicators for message types
-- **Notification system** for new private messages in background tabs
-- **Context menus** for quick user interactions and admin actions
-- **Status indicators** showing connection state and encryption status
+### Administrative Controls
+- **User Management**: View detailed user information including IP addresses and join times
+- **Moderation Tools**: Kick and ban users with immediate effect
+- **Room Administration**: Create, delete, and manage chat rooms
+- **Real-time Monitoring**: Live user lists and activity tracking
+- **Flexible Permissions**: Admin-only functions clearly separated from user features
 
 ### Technical Advantages
-- **Lightweight deployment** requiring only Python 3.11+ and a web browser
-- **Scalable architecture** supporting concurrent connections
-- **Resource efficient** with minimal memory and CPU footprint
-- **Framework-free client** eliminating JavaScript framework dependencies
-- **Standards-compliant** WebSocket implementation for broad compatibility
+- **Lightweight**: Minimal dependencies and efficient resource usage
+- **Scalable Architecture**: WebSocket-based design supports many concurrent users
+- **Database Persistence**: SQLite storage for room management and user tracking
+- **Error Handling**: Comprehensive error handling and graceful degradation
+- **Modern Standards**: Uses contemporary web APIs and security practices
 
 ## Installation Instructions
 
 ### Prerequisites
-- Python 3.11 or higher
-- Modern web browser with WebCrypto API support
+- Python 3.7 or higher
+- Modern web browser with WebSocket and Web Crypto API support
 - Network connectivity for WebSocket communications
 
 ### Server Setup
 
-1. **Clone the repository:**
+1. **Clone the Repository**
    ```bash
    git clone https://github.com/xsukax/xsukax-Chatroom-E2E-System.git
    cd xsukax-Chatroom-E2E-System
    ```
 
-2. **Install Python dependencies:**
+2. **Install Python Dependencies**
    ```bash
-   pip3 install websockets
+   pip install websockets
    ```
 
-3. **Run the chat server:**
+3. **Start the Chat Server**
    ```bash
-   python3 chat_server.py
+   python chat_server.py
    ```
 
-4. **Note the admin password:**
-   The server will display the initial admin password on startup and generate a new one every hour.
+   The server will start on port 3333 and display the initial admin password.
 
-### Client Access
+4. **Access the Web Client**
+   Open `chat_client.html` in a web browser, or serve it through a web server:
+   ```bash
+   # Using Python's built-in server (optional)
+   python -m http.server 8080
+   ```
 
-1. **Open the client application:**
-   Open `chat_client.html` in any modern web browser, or serve it through a web server.
+### Production Deployment
 
-2. **Configure connection:**
-   - Default Testing server URL: `ws://localhost:3333`
-   - Default Demo server URL: `wss://chat.xsukax.net`
-   - For remote servers, update the URL accordingly
-   - Optionally specify a custom username, or leave blank for auto-generation
+For production environments, consider:
 
-3. **Connect and start chatting:**
-   Click "Connect" to join the chat system and begin secure communication.
+- **Reverse Proxy**: Use nginx or Apache to handle SSL termination
+- **SSL/TLS**: Configure WSS (secure WebSocket) connections
+- **Firewall**: Restrict access to port 3333 to authorized networks
+- **Process Management**: Use systemd, supervisor, or similar for service management
+- **Backup**: Regular backups of the SQLite database file
 
-### Deployment Considerations
+### Configuration Options
 
-**For Production Use:**
-- Configure firewall rules to allow WebSocket connections on port 3333
-- Consider using a reverse proxy (nginx, Apache) for SSL/TLS termination
-- Implement monitoring for server health and connection metrics
-- Adjust flood protection limits based on expected usage patterns
+The server accepts several configuration parameters:
 
-**For Development:**
-- Server runs on `0.0.0.0:3333` by default, accessible from any network interface
-- Admin passwords are saved to `admin.txt` for development convenience
-- Ban lists are persisted in `banned.txt` for testing moderation features
+- **Port**: Modify the port number in `chat_server.py` (default: 3333)
+- **Database**: SQLite database file location (default: `chat_rooms.db`)
+- **Admin Password**: Automatically generated and rotated hourly
+- **Rate Limiting**: Flood protection settings (default: 30 messages/minute)
 
 ## Usage Guide
 
-### Basic Chat Operations
+### Connecting to the Chat System
+
+1. **Initial Connection**
+   - Open the web client in your browser
+   - Enter the WebSocket server URL (e.g., `wss://your-server.com:3333`)
+   - Choose a custom username or leave blank for auto-generation
+   - Click "Connect" to join the main room
+
+2. **Username Management**
+   - Auto-generated usernames follow the pattern `xsukax0001`, `xsukax0002`, etc.
+   - Change your username anytime using `/changeuname <new_username>`
+   - Username changes are broadcast to all rooms you've joined
+
+### Room Management
 
 ```mermaid
 graph TD
-    A[Open Client] --> B[Enter Server URL]
-    B --> C[Optional: Custom Username]
-    C --> D[Click Connect]
-    D --> E[Auto-generate RSA Keys]
-    E --> F[Join Main Chat Room]
-    F --> G[Send Public Messages]
-    F --> H[Start Private Chat]
-    H --> I[End-to-End Encrypted PM]
-```
-
-### Connection and Authentication Flow
-
-```mermaid
-sequenceDiagram
-    participant C as Client
-    participant S as Server
-    
-    C->>S: WebSocket Connection Request
-    S->>C: Connection Accepted
-    C->>S: Register Message (username)
-    S->>C: Welcome Message
-    C->>C: Generate RSA Key Pair
-    C->>S: Register Public Key
-    S->>C: Key Registration Confirmed
-    S->>C: Updated User List
-    Note over C,S: Ready for secure communication
-```
-
-### Private Message Encryption Process
-
-```mermaid
-graph LR
-    A[User Types Message] --> B[Retrieve Recipient Public Key]
-    B --> C[Encrypt with RSA-OAEP]
-    C --> D[Send Encrypted Payload]
-    D --> E[Server Forwards to Recipient]
-    E --> F[Decrypt with Private Key]
-    F --> G[Display Decrypted Message]
+    A[User Connects] --> B[Join Main Room]
+    B --> C{Want to Join Other Rooms?}
+    C -->|Yes| D[Browse Available Rooms]
+    C -->|No| E[Chat in Main Room]
+    D --> F[Join Room]
+    F --> G[Switch Between Rooms]
+    G --> H[Leave Room When Done]
+    E --> I[Send Messages]
+    H --> I
+    I --> J[Disconnect or Continue]
 ```
 
 ### Administrative Functions
 
-**Becoming an Admin:**
-1. Click the "Admin" button in the interface
-2. Enter the current admin password (displayed in server console)
-3. Gain access to moderation tools and user management
+Administrators have access to additional commands and features:
 
-**Admin Commands:**
-- `/userinfo <username>` - Display detailed user information
-- `/kick <username>` - Remove user from chat temporarily
-- `/ban <username>` - Permanently ban user by IP address
-- `/changeuname <new_username>` - Change your username
+1. **Gaining Admin Access**
+   ```
+   /admin <password>
+   ```
+   Use the password displayed when the server starts (rotates hourly).
 
-**User Commands:**
-- `/help` - Display available commands
-- `/changeuname <new_username>` - Change your username
+2. **User Management Commands**
+   ```
+   /userinfo <username>    # View user details
+   /kick <username>        # Remove user from server
+   /ban <username>         # Permanently ban user's IP
+   ```
+
+3. **Room Management**
+   ```
+   /createroom <roomname>  # Create new room (admin only)
+   /deleteroom <roomname>  # Delete room (admin only)
+   ```
+
+### Private Messaging
+
+```mermaid
+sequenceDiagram
+    participant A as User A
+    participant S as Server
+    participant B as User B
+    
+    A->>S: Register public key
+    B->>S: Register public key
+    S->>A: Share B's public key
+    S->>B: Share A's public key
+    A->>A: Encrypt message with B's public key
+    A->>S: Send encrypted message
+    S->>B: Forward encrypted message
+    B->>B: Decrypt with private key
+    Note over A,B: End-to-end encrypted communication
+```
+
+### Command Reference
+
+| Command | Description | Access Level |
+|---------|-------------|--------------|
+| `/help` | Display available commands | All users |
+| `/changeuname <name>` | Change username | All users |
+| `/join #<roomname>` | Join a chat room | All users |
+| `/left` | Leave current room | All users |
+| `/admin <password>` | Gain admin privileges | Admin only |
+| `/userinfo <username>` | View user information | Admin only |
+| `/kick <username>` | Remove user from server | Admin only |
+| `/ban <username>` | Ban user's IP address | Admin only |
+| `/createroom <name>` | Create new room | Admin only |
+| `/deleteroom <name>` | Delete existing room | Admin only |
 
 ### Security Best Practices
 
-**For Users:**
-- Verify encryption indicators (🔒) appear on private messages
-- Be cautious when sharing sensitive information even in encrypted channels
-- Log out properly to clear local encryption keys
-- Use unique usernames that don't reveal personal information
+1. **For Users**
+   - Verify encryption indicators before sending sensitive information
+   - Use strong, unique usernames
+   - Report suspicious behavior to administrators
+   - Avoid sharing personal information in public rooms
 
-**For Administrators:**
-- Regularly monitor the admin password rotation in server logs
-- Maintain secure access to the server console for password retrieval
-- Review ban lists periodically to ensure appropriate moderation
-- Monitor flood protection logs for potential abuse patterns
+2. **For Administrators**
+   - Change admin passwords regularly (automated every hour)
+   - Monitor user activity for suspicious patterns
+   - Use IP banning judiciously for persistent offenders
+   - Keep the server software updated
 
-### Troubleshooting Common Issues
+3. **For Operators**
+   - Use WSS (secure WebSocket) connections in production
+   - Implement proper firewall rules
+   - Regular security audits and updates
+   - Monitor server logs for anomalies
 
-**Connection Problems:**
-- Verify WebSocket URL format (ws:// or wss://)
-- Check firewall settings on both client and server
-- Ensure server is running and accessible on specified port
+## Architecture Overview
 
-**Encryption Issues:**
-- Confirm browser supports WebCrypto API (all modern browsers)
-- Verify public key exchange completed successfully
-- Check for JavaScript errors in browser developer console
-
-**Performance Optimization:**
-- Monitor server memory usage during high concurrent user loads
-- Adjust heartbeat intervals for network conditions
-- Consider connection pooling for large-scale deployments
+```mermaid
+graph TB
+    subgraph "Client Side"
+        A[Web Browser]
+        B[JavaScript Client]
+        C[RSA Key Generation]
+        D[Message Encryption]
+    end
+    
+    subgraph "Server Side"
+        E[WebSocket Server]
+        F[SQLite Database]
+        G[User Management]
+        H[Room Management]
+    end
+    
+    subgraph "Security Layer"
+        I[Public Key Exchange]
+        J[Admin Authentication]
+        K[Flood Protection]
+        L[IP Banning]
+    end
+    
+    A --> B
+    B --> C
+    C --> D
+    B <--> E
+    E --> F
+    E --> G
+    E --> H
+    E <--> I
+    E --> J
+    E --> K
+    E --> L
+```
 
 ## Licensing Information
 
-This project is licensed under the **GNU General Public License v3.0** (GPL-3.0).
+This project is licensed under the **GNU General Public License v3.0 (GPL-3.0)**.
 
 ### What This Means
 
-**For Users:**
-- You are free to use, modify, and distribute this software
-- You have access to the complete source code
-- No warranty is provided, but you have the right to fix issues yourself
-- You can use this software for any purpose, including commercial use
+The GPL-3.0 license ensures that this software remains free and open source:
 
-**For Contributors:**
-- Any modifications or derivative works must also be licensed under GPL-3.0
-- You must provide source code for any distributed modifications
-- You cannot impose additional restrictions on the software
-- Patent rights are granted for the software but cannot be used defensively
+- **Freedom to Use**: You can use this software for any purpose, commercial or non-commercial
+- **Freedom to Study**: You have access to the source code and can examine how it works
+- **Freedom to Modify**: You can modify the software to suit your needs
+- **Freedom to Distribute**: You can share the software and your modifications with others
 
-**For Distributors:**
-- You must include the full license text with any distribution
-- Source code must be made available to recipients
-- You cannot charge for the software itself, only for distribution or support services
-- All derivative works must maintain GPL-3.0 licensing
+### Important Requirements
 
-The GPL-3.0 license ensures that this chat system remains free and open source, fostering community development while protecting user freedom. It prevents proprietary forks while encouraging collaborative improvement and security auditing.
+If you distribute this software or create derivative works:
 
-For the complete license text, see the [LICENSE](LICENSE) file in this repository or visit [https://www.gnu.org/licenses/gpl-3.0.html](https://www.gnu.org/licenses/gpl-3.0.html).
+- You must provide the source code under the same GPL-3.0 license
+- You must include the original copyright notices and license information
+- Any modifications must be clearly marked and documented
+- Network use (such as running a public server) does not trigger distribution requirements
+
+### For Contributors
+
+By contributing to this project, you agree that your contributions will be licensed under the same GPL-3.0 license. This ensures that the project remains free and open source for everyone.
+
+### For Users and Operators
+
+You can freely run this chat server for personal, educational, or commercial purposes without any licensing fees or restrictions. The GPL license only applies if you distribute the software itself.
 
 ---
 
-**Contributing:** Pull requests and issue reports are welcome. Please ensure all contributions maintain the project's focus on security, privacy, and simplicity.
-
-**Security Reporting:** For security vulnerabilities, please open a GitHub issue with detailed reproduction steps.
+**Security Notice**: While this system implements strong encryption for private messages, users should always exercise caution when sharing sensitive information online. The security of any system depends on proper implementation, configuration, and operational practices.
