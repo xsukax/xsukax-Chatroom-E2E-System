@@ -313,10 +313,40 @@ class ChatServer:
             print(f"Error saving banned users: {e}")
 
     def get_client_ip(self, websocket):
-        """Extract client IP address"""
+        """Extract real client IP address from headers or direct connection"""
         try:
-            return websocket.remote_address[0]
-        except:
+            # Check for X-Real-IP header (set by nginx/reverse proxy)
+            if hasattr(websocket, 'request_headers'):
+                x_real_ip = websocket.request_headers.get('X-Real-IP')
+                if x_real_ip:
+                    print(f"[DEBUG] Real IP from X-Real-IP: {x_real_ip}")
+                    return x_real_ip
+                
+                # Check for X-Forwarded-For header
+                x_forwarded_for = websocket.request_headers.get('X-Forwarded-For')
+                if x_forwarded_for:
+                    # Get the first IP in the chain (original client)
+                    real_ip = x_forwarded_for.split(',')[0].strip()
+                    print(f"[DEBUG] Real IP from X-Forwarded-For: {real_ip}")
+                    return real_ip
+                
+                # Check for Forwarded header (RFC 7239)
+                forwarded = websocket.request_headers.get('Forwarded')
+                if forwarded:
+                    # Parse Forwarded header: for=192.0.2.43;proto=https
+                    import re
+                    match = re.search(r'for=([^;,\s]+)', forwarded)
+                    if match:
+                        real_ip = match.group(1).strip('"')
+                        print(f"[DEBUG] Real IP from Forwarded: {real_ip}")
+                        return real_ip
+            
+            # Fallback to direct connection IP
+            direct_ip = websocket.remote_address[0]
+            print(f"[DEBUG] Direct connection IP: {direct_ip}")
+            return direct_ip
+        except Exception as e:
+            print(f"Error getting client IP: {e}")
             return "unknown"
 
     def is_banned(self, websocket):
@@ -438,12 +468,20 @@ class ChatServer:
 
         self.usernames.add(username)
         
+        # Detect connection type
+        connection_type = "HTTPS" if hasattr(websocket, 'request_headers') and (
+            websocket.request_headers.get('X-Forwarded-Proto') == 'https' or
+            websocket.request_headers.get('X-Real-IP') or
+            websocket.request_headers.get('X-Forwarded-For')
+        ) else "HTTP"
+        
         user_data = {
             'username': username,
             'ip': client_ip,
             'is_admin': False,
             'joined_at': datetime.now().isoformat(),
-            'last_ping': time.time()
+            'last_ping': time.time(),
+            'connection_type': connection_type
         }
         
         self.clients[websocket] = user_data
@@ -457,15 +495,16 @@ class ChatServer:
         await websocket.send(json.dumps({
             'type': 'welcome',
             'username': username,
-            'message': f'Connected as {username}',
-            'rooms': self.get_user_rooms(username)
+            'message': f'Connected as {username} via {connection_type}',
+            'rooms': self.get_user_rooms(username),
+            'connection_type': connection_type
         }))
 
         # Broadcast user joined to main room
         await self.broadcast_to_room('main', {
             'type': 'user_joined',
             'username': username,
-            'message': f'{username} joined the chat',
+            'message': f'{username} joined the chat ({connection_type})',
             'timestamp': datetime.now().isoformat()
         }, exclude=websocket)
 
@@ -477,7 +516,7 @@ class ChatServer:
         for room_name in self.get_user_rooms(username):
             await self.broadcast_room_users_list(room_name)
 
-        print(f"[{datetime.now().strftime('%H:%M:%S')}] {username} ({client_ip}) joined")
+        print(f"[{datetime.now().strftime('%H:%M:%S')}] {username} ({client_ip}) joined via {connection_type}")
         return user_data
 
     async def unregister_client(self, websocket):
@@ -897,8 +936,6 @@ class ChatServer:
         
         await self.broadcast_to_room(target_room, message)
 
-    # ... (include all other existing methods like handle_ping, handle_public_key_register, etc.)
-    
     async def handle_ping(self, websocket):
         """Handle client ping message"""
         if websocket in self.clients:
@@ -1084,6 +1121,7 @@ class ChatServer:
                         'ip': data['ip'],
                         'is_admin': data['is_admin'],
                         'joined_at': data['joined_at'],
+                        'connection_type': data.get('connection_type', 'HTTP'),
                         'rooms': self.get_user_rooms(data['username'])
                     }
                 }))
@@ -1187,7 +1225,8 @@ class ChatServer:
 
     async def handle_client(self, websocket):
         """Handle client connection with enhanced error handling"""
-        print(f"[{datetime.now().strftime('%H:%M:%S')}] New client connecting from {self.get_client_ip(websocket)}")
+        client_ip = self.get_client_ip(websocket)
+        print(f"[{datetime.now().strftime('%H:%M:%S')}] New client connecting from {client_ip}")
         
         user_data = None
         try:
@@ -1225,20 +1264,28 @@ class ChatServer:
                 await self.unregister_client(websocket)
 
 async def main():
-    print("Starting xsukax Chat System with Room Support on port 3333...")
-    print("Admin password will rotate every hour")
-    print("Supports both ws:// and wss:// connections")
-    print("Private messages are end-to-end encrypted")
-    print("Enhanced connection stability with heartbeat")
-    print("Flood protection: 30 messages per minute for users (admins exempt)")
-    print("Room functionality with SQLite database storage")
-    print("Room-specific user lists for better organization")
+    print("Starting xsukax Chat System with Enhanced HTTP/HTTPS Support")
+    print("=====================================================")
+    print("Features:")
+    print("- Room support with SQLite database storage")
+    print("- End-to-end encryption for private messages")
+    print("- Enhanced connection stability with heartbeat")
+    print("- Flood protection: 30 messages per minute (admins exempt)")
+    print("- Real IP detection for both HTTP and HTTPS connections")
+    print("- Automatic hourly admin password rotation")
+    print("- Support for reverse proxy forwarding headers")
+    print("")
     
     server = ChatServer()
     
-    print(f"Server started. Initial admin password: {server.admin_password}")
-    print("Server listening on ws://localhost:3333")
+    print(f"Server Configuration:")
+    print(f"- Listening on: 0.0.0.0:3333")
+    print(f"- Initial admin password: {server.admin_password}")
+    print(f"- HTTP connections: ws://your-domain:3333")
+    print(f"- HTTPS connections: wss://your-domain (requires reverse proxy)")
+    print("")
     print("Press Ctrl+C to stop the server")
+    print("=" * 50)
     
     # Start heartbeat checker as asyncio task
     asyncio.create_task(server.start_heartbeat_checker())
